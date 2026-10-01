@@ -150,4 +150,29 @@ describe('ChatSession', () => {
     expect(session.getState()).toMatchObject({ status: 'ready' });
     expect(session.getState().error?.kind).toBe('rate_limit');
   });
+
+  it('after dispose, a pending reply is neither spoken nor published', async () => {
+    let resolve!: (r: TurnResult) => void;
+    const { session, model, deps, states } = setup('after', []);
+    (model.turn as ReturnType<typeof vi.fn>).mockImplementationOnce(() => new Promise<TurnResult>((r) => { resolve = r; }));
+    const started = session.start();
+    const before = states.length;
+    session.dispose();
+    resolve({ reply: 'Too late' });
+    await started;
+    expect(deps.speak).not.toHaveBeenCalled();
+    expect(states.length).toBe(before);
+  });
+
+  it('after dispose, a pending finish returns null', async () => {
+    let resolve!: (r: SessionReview) => void;
+    const { session, model } = setup('after', [{ reply: 'Hi' }, { reply: 'Ok' }]);
+    await session.start();
+    await session.send('hello');
+    (model.review as ReturnType<typeof vi.fn>).mockImplementationOnce(() => new Promise<SessionReview>((r) => { resolve = r; }));
+    const finishing = session.finish();
+    session.dispose();
+    resolve(review);
+    expect(await finishing).toBeNull();
+  });
 });

@@ -46,11 +46,13 @@ export function ChatScreen({ scenario, mode, settings, output, onDone, onExit }:
         },
         (s) => alive && setState(s),
       );
+      if (!alive) return;
       sessionRef.current = session;
       await session.start();
     })();
     return () => {
       alive = false;
+      sessionRef.current?.dispose();
       output.cancel();
     };
   }, []);

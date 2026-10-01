@@ -27,6 +27,7 @@ const toAiError = (e: unknown): AiError => (e instanceof AiError ? e : new AiErr
 
 export class ChatSession {
   private state: SessionState = { turns: [], status: 'idle', error: null };
+  private disposed = false;
 
   constructor(
     private readonly mode: Mode,
@@ -39,6 +40,11 @@ export class ChatSession {
     return this.state;
   }
 
+  // 화면을 떠난 뒤 도착한 응답은 말하지도, 화면에 반영하지도 않는다.
+  dispose(): void {
+    this.disposed = true;
+  }
+
   async start(): Promise<void> {
     if (this.state.status !== 'idle') return;
     this.update({ status: 'waiting', error: null });
@@ -49,6 +55,7 @@ export class ChatSession {
       this.update({ status: 'idle', error: toAiError(e) });
       return;
     }
+    if (this.disposed) return;
     this.update({ turns: [{ role: 'ai', text: res.reply }], status: 'ready' });
     this.deps.speak(res.reply);
   }
@@ -86,6 +93,7 @@ export class ChatSession {
       this.update({ status: 'ready', error: toAiError(e) });
       return null;
     }
+    if (this.disposed) return null;
     this.update({ status: 'done' });
     if (this.mode === 'after') await this.deps.saveMistakes(review.corrections);
     await this.deps.saveSession(history);
@@ -104,6 +112,7 @@ export class ChatSession {
       this.update({ turns, status: 'ready', error: toAiError(e) });
       return;
     }
+    if (this.disposed) return;
     const turns = [...this.state.turns];
     if (withFeedback && res.feedback) turns[turns.length - 1] = { ...turns[turns.length - 1], feedback: res.feedback };
     this.update({ turns: [...turns, { role: 'ai', text: res.reply }], status: 'ready' });
@@ -116,6 +125,7 @@ export class ChatSession {
   }
 
   private update(patch: Partial<SessionState>): void {
+    if (this.disposed) return;
     this.state = { ...this.state, ...patch };
     this.onChange(this.state);
   }
