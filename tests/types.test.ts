@@ -9,7 +9,7 @@ describe('types', () => {
     ]);
   });
 
-  it('defaults to gemini-2.5-flash with no API key', () => {
-    expect(DEFAULT_SETTINGS).toEqual({ apiKey: '', model: 'gemini-2.5-flash', rate: 0.9, voiceURI: null });
+  it('defaults to gemini-3.5-flash-lite with no API key', () => {
+    expect(DEFAULT_SETTINGS).toEqual({ apiKey: '', model: 'gemini-3.5-flash-lite', rate: 0.9, voiceURI: null });
   });
 });

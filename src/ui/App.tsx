@@ -4,6 +4,8 @@ import { loadSettings, saveSettings } from '../storage/db';
 import type { Mode, Scenario, SessionReview, Settings } from '../types';
 import { ChatScreen } from './ChatScreen';
 import { HomeScreen } from './HomeScreen';
+import { NotesScreen } from './NotesScreen';
+import { ReviewScreen } from './ReviewScreen';
 import { SettingsScreen } from './SettingsScreen';
 
 export type Screen =
@@ -24,6 +26,7 @@ export function App() {
 
   if (!settings) return null;
   const home = () => setScreen({ name: 'home' });
+  const notes = () => setScreen({ name: 'notes' });
 
   switch (screen.name) {
     case 'settings':
@@ -50,12 +53,16 @@ export function App() {
           onDone={(review) => setScreen({ name: 'review', review })}
         />
       );
+    case 'review':
+      return <ReviewScreen review={screen.review} onHome={home} onNotes={notes} />;
+    case 'notes':
+      return <NotesScreen onBack={home} />;
     default:
       return (
         <HomeScreen
           hasKey={settings.apiKey.length > 0}
           onStart={(scenario, mode) => setScreen({ name: 'chat', scenario, mode })}
-          onNotes={() => setScreen({ name: 'notes' })}
+          onNotes={notes}
           onSettings={() => setScreen({ name: 'settings' })}
         />
       );
