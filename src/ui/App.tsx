@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { WebSpeechOutput } from '../speech/webSpeech';
 import { loadSettings, saveSettings } from '../storage/db';
 import type { Mode, Scenario, SessionReview, Settings } from '../types';
+import { ChatScreen } from './ChatScreen';
 import { HomeScreen } from './HomeScreen';
 import { SettingsScreen } from './SettingsScreen';
 
@@ -36,6 +37,17 @@ export function App() {
             setSettings(s);
             home();
           }}
+        />
+      );
+    case 'chat':
+      return (
+        <ChatScreen
+          scenario={screen.scenario}
+          mode={screen.mode}
+          settings={settings}
+          output={output}
+          onExit={home}
+          onDone={(review) => setScreen({ name: 'review', review })}
         />
       );
     default:
