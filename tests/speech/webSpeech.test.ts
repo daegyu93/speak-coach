@@ -41,6 +41,20 @@ describe('WebSpeechInput', () => {
     expect(await input.stop()).toBe('cold brew please');
   });
 
+  it('collapses growing duplicate results reported by Android Chrome', async () => {
+    const input = new WebSpeechInput(FakeRec);
+    input.start();
+    FakeRec.last.emit('I want', 'I want to go', 'I want to go to the hotel');
+    expect(await input.stop()).toBe('I want to go to the hotel');
+  });
+
+  it('keeps separate segments that do not repeat each other', async () => {
+    const input = new WebSpeechInput(FakeRec);
+    input.start();
+    FakeRec.last.emit('I want to go', 'to the hotel');
+    expect(await input.stop()).toBe('I want to go to the hotel');
+  });
+
   it('returns empty string on no-speech', async () => {
     const input = new WebSpeechInput(FakeRec);
     input.start();

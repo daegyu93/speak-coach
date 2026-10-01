@@ -18,6 +18,19 @@ export function getRecognitionCtor(): RecognitionCtor | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+// 안드로이드 크롬은 continuous 모드에서 "I want", "I want to go"처럼 앞 결과를 포함한 결과를 다시 보낸다.
+// 다음 결과가 앞 결과로 시작하면 앞 결과를 버린다.
+function collapseResults(parts: string[]): string[] {
+  const kept: string[] = [];
+  for (const p of parts) {
+    if (!p) continue;
+    const prev = kept.at(-1);
+    if (prev !== undefined && p.toLowerCase().startsWith(prev.toLowerCase())) kept[kept.length - 1] = p;
+    else kept.push(p);
+  }
+  return kept;
+}
+
 export class WebSpeechInput implements SpeechInput {
   private rec: RecognitionLike | null = null;
   private text = '';
@@ -41,7 +54,7 @@ export class WebSpeechInput implements SpeechInput {
     this.error = null;
     // results는 지금까지의 전체 목록이라 매번 처음부터 다시 이어 붙인다 (미확정 결과 포함).
     rec.onresult = (e) => {
-      this.text = Array.from(e.results, (r) => r[0]?.transcript.trim() ?? '').filter(Boolean).join(' ');
+      this.text = collapseResults(Array.from(e.results, (r) => r[0]?.transcript.trim() ?? '')).join(' ');
     };
     rec.onerror = (e) => {
       this.error = e.error;
