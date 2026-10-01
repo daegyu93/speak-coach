@@ -20,9 +20,10 @@ export interface GeminiOptions {
 }
 
 function kindForStatus(status: number, body: string): AiErrorKind {
-  if (status === 429) return 'rate_limit';
+  if (status === 429) return /PerDay/i.test(body) ? 'daily_limit' : 'rate_limit';
   if (status >= 500) return 'unavailable';
   if (status === 401 || status === 403 || /API_KEY_INVALID|API key not valid/i.test(body)) return 'bad_key';
+  if (status === 404 || /is not found|no longer available/i.test(body)) return 'bad_model';
   return 'bad_response';
 }
 

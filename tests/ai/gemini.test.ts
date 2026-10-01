@@ -87,6 +87,19 @@ describe('GeminiChatModel.turn', () => {
     expect(await kindOf(model.turn('SYS', [], false))).toBe('rate_limit');
   });
 
+  it('maps a per-day quota 429 to daily_limit without retrying', async () => {
+    const body = JSON.stringify({ error: { code: 429, message: 'quota', details: [{ violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', quotaValue: '20' }] }] } });
+    const { model, fetchFn } = setup(new Response(body, { status: 429 }), okBody({ reply: 'never' }));
+    expect(await kindOf(model.turn('SYS', [], false))).toBe('daily_limit');
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps an unknown model name to bad_model without retrying', async () => {
+    const { model, fetchFn } = setup(errBody(404, 'models/gemini-typo is not found for API version v1beta'), okBody({ reply: 'never' }));
+    expect(await kindOf(model.turn('SYS', [], false))).toBe('bad_model');
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
   it('maps an invalid key to bad_key without retrying', async () => {
     const { model, fetchFn } = setup(errBody(400, 'API key not valid. Please pass a valid API key.'));
     expect(await kindOf(model.turn('SYS', [], false))).toBe('bad_key');
